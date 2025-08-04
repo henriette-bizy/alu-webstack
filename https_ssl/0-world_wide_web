@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# Usage: ./1-world_wide_web <domain> [subdomain]
+# Displays DNS information about subdomains.
+
+# Check if dig is installed
+if ! command -v dig &> /dev/null; then
+    echo "Error: dig command not found. Install it with 'sudo apt install dnsutils' (Debian/Ubuntu) or 'sudo yum install bind-utils' (RHEL/CentOS)."
+    exit 1
+fi
+
+domain_information () {
+    record=$(dig +short "$2"."$1")
+    if [ -z "$record" ]; then
+        echo "The subdomain $2.$1 has no DNS record."
+    else
+        record_type=$(dig "$2.$1" | grep -A1 'ANSWER SECTION:' | awk 'NR==2 {print $4}')
+        echo "The subdomain $2 is a $record_type record and points to $record"
+    fi
+}
+
+if [ "$#" -eq 1 ]; then
+    subdomains=("www" "lb-01" "web-01" "web-02")
+    for sub in "${subdomains[@]}"; do
+        domain_information "$1" "$sub"
+    done
+elif [ "$#" -eq 2 ]; then
+    domain_information "$1" "$2"
+else
+    echo "Usage: $0 <domain> [subdomain]"
+    exit 1
+fi
